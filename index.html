@@ -13,7 +13,6 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
   
   <script>
-    // Вставь сюда свои данные конфигурации Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyCotet7hl_KgwhiwYRl2CuTlUS01hjHLjs",
       authDomain: "clicekrtg.firebaseapp.com",
@@ -24,7 +23,6 @@
       appId: "1:51138637482:web:6160d9ad8099f4d461aad3"
     };
 
-    // Инициализация Firebase
     let firebaseInitialized = false;
 
     function initializeFirebase() {
@@ -40,7 +38,7 @@
 
     function saveUsernameToFirebase(username) {
       if (firebaseInitialized) {
-        const userId = new Date().getTime().toString(); // Используем временную метку как уникальный ID пользователя
+        const userId = new Date().getTime().toString();
         firebase.database().ref('users/' + userId).set({
           username: username
         }).then(() => {
@@ -54,21 +52,32 @@
     }
 
     function sendTelegramUsernameToUnity() {
-      if (typeof Telegram !== 'undefined' && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) {
+      console.log('Проверка инициализации Telegram WebApp API');
+      if (typeof Telegram !== 'undefined' && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) {
         var username = Telegram.WebApp.initDataUnsafe.user.username;
+        console.log('Получен ник пользователя:', username);
         if (unityInstance) {
           unityInstance.SendMessage('GameManager', 'ReceiveTelegramUsername', username);
-          saveUsernameToFirebase(username); // Сохраняем ник в Firebase
+          saveUsernameToFirebase(username);
         } else {
           console.error('Unity instance is not ready.');
         }
       } else {
         console.log('Telegram WebApp не инициализирован или данные пользователя недоступны.');
+        console.log('Telegram:', Telegram);
+        if (Telegram.WebApp) {
+          console.log('Telegram.WebApp.initDataUnsafe:', Telegram.WebApp.initDataUnsafe);
+        }
       }
     }
+
+    window.onload = function() {
+      initializeFirebase();
+      setTimeout(sendTelegramUsernameToUnity, 1000); // Задержка для инициализации Telegram WebApp API
+    };
   </script>
 </head>
-<body onload="sendTelegramUsernameToUnity()">
+<body>
   <h1>Firebase Check</h1>
   
   <!-- Здесь будет ваша сборка WebGL от Unity -->
@@ -154,7 +163,7 @@
         fullscreenButton.onclick = () => {
           unityInstance.SetFullscreen(1);
         };
-        sendTelegramUsernameToUnity();  // Добавление этой строки для вызова функции после инициализации Unity
+        sendTelegramUsernameToUnity();
       }).catch((message) => {
         alert(message);
       });
