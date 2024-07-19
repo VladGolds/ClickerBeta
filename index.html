@@ -48,7 +48,7 @@
                 } else {
                     console.log("Имя успешно сохранено в Firebase.");
                     // Обновляем статус в Unity
-                    Unity.call("OnFirebaseConnectionStatusReceived", "Имя успешно сохранено в Firebase.");
+                    unityInstance.SendMessage('NameInputManager', 'OnFirebaseConnectionStatusReceived', "Имя успешно сохранено в Firebase.");
                 }
             });
         }
@@ -60,6 +60,14 @@
         function saveNameFromUnity(name) {
             saveNameToFirebase(name);
         }
+
+        // Функция для отправки имени пользователя в Unity
+        function sendUsernameToUnity(username) {
+            unityInstance.SendMessage('NameInputManager', 'SetUsername', username);
+        }
+
+        // Пример вызова функции для тестирования
+        // sendUsernameToUnity('ExampleUsername');
     </script>
 </head>
 <body>
