@@ -61,20 +61,26 @@
             saveNameToFirebase(name);
         }
 
-        // Подключение к WebSocket-серверу
-        const socket = new WebSocket('ws://localhost:8080');
-
-        socket.addEventListener('message', function (event) {
-            const data = JSON.parse(event.data);
-            if (data.type === 'username') {
-                sendUsernameToUnity(data.username);
-            }
-        });
-
         // Функция для отправки имени пользователя в Unity
         function sendUsernameToUnity(username) {
             unityInstance.SendMessage('NameInputManager', 'SetUsername', username);
         }
+
+        // Получение имени пользователя из Firebase и отправка в Unity
+        function getUsernameFromFirebase() {
+            const database = firebase.database();
+            database.ref('players/player1/name').once('value').then((snapshot) => {
+                const username = snapshot.val();
+                if (username) {
+                    // Отправьте имя пользователя в Unity
+                    sendUsernameToUnity(username);
+                }
+            });
+        }
+
+        window.onload = function() {
+            getUsernameFromFirebase();
+        };
     </script>
 </head>
 <body>
