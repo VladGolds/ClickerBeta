@@ -60,10 +60,17 @@
         function saveNameFromUnity(name) {
             saveNameToFirebase(name);
         }
+
+        // Функция для установки фокуса на поле ввода
+        function focusInputField() {
+            var inputField = document.getElementById('unityInputField'); // Убедись, что у тебя правильный ID
+            if (inputField) {
+                inputField.focus();
+            }
+        }
     </script>
 </head>
 <body>
-    <h1>Firebase Check</h1>
     <!-- Здесь будет ваша сборка WebGL от Unity -->
     <script src="Build/ClickerTG.js"></script>
     
