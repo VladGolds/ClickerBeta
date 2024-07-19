@@ -61,13 +61,20 @@
             saveNameToFirebase(name);
         }
 
+        // Подключение к WebSocket-серверу
+        const socket = new WebSocket('ws://localhost:8080');
+
+        socket.addEventListener('message', function (event) {
+            const data = JSON.parse(event.data);
+            if (data.type === 'username') {
+                sendUsernameToUnity(data.username);
+            }
+        });
+
         // Функция для отправки имени пользователя в Unity
         function sendUsernameToUnity(username) {
             unityInstance.SendMessage('NameInputManager', 'SetUsername', username);
         }
-
-        // Пример вызова функции для тестирования
-        // sendUsernameToUnity('ExampleUsername');
     </script>
 </head>
 <body>
