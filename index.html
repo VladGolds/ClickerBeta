@@ -10,9 +10,10 @@
     <!-- Подключение Firebase SDK 8.x -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
     <script>
-        // Вставьте сюда свои данные конфигурации Firebase
+        // Вставь сюда свои данные конфигурации Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCotet7hl_KgwhiwYRl2CuTlUS01hjHLjs",
             authDomain: "clicekrtg.firebaseapp.com",
@@ -25,6 +26,7 @@
 
         // Инициализация Firebase
         let firebaseInitialized = false;
+
         function initializeFirebase() {
             try {
                 firebase.initializeApp(firebaseConfig);
@@ -36,57 +38,40 @@
             }
         }
 
-        function saveNameToFirebase(name) {
-            if (!firebaseInitialized) {
-                console.error("Firebase не инициализирован.");
-                return;
-            }
-            const database = firebase.database();
-            database.ref('players/player1/name').set(name, (error) => {
-                if (error) {
-                    console.error("Ошибка при сохранении имени в Firebase:", error);
-                } else {
-                    console.log("Имя успешно сохранено в Firebase.");
-                    // Обновляем статус в Unity
-                    unityInstance.SendMessage('NameInputManager', 'OnFirebaseConnectionStatusReceived', "Имя успешно сохранено в Firebase.");
-                }
-            });
-        }
-
         // Инициализация Firebase
         initializeFirebase();
 
-        // Функция для вызова из Unity
-        function saveNameFromUnity(name) {
-            saveNameToFirebase(name);
-        }
+        // Получение информации о пользователе из Телеграма
+        window.Telegram.WebApp.ready(function() {
+            const user = Telegram.WebApp.initDataUnsafe.user;
 
-        // Функция для отправки имени пользователя в Unity
-        function sendUsernameToUnity(username) {
-            unityInstance.SendMessage('NameInputManager', 'SetUsername', username);
-        }
+            if (user) {
+                const userName = user.username;
 
-        // Получение имени пользователя из Firebase и отправка в Unity
-        function getUsernameFromFirebase() {
-            const database = firebase.database();
-            database.ref('players/player1/name').once('value').then((snapshot) => {
-                const username = snapshot.val();
-                if (username) {
-                    // Отправьте имя пользователя в Unity
-                    sendUsernameToUnity(username);
+                // Отправка ника в Unity
+                const unityInstance = window.unityInstance;
+                if (unityInstance) {
+                    unityInstance.SendMessage('GameManager', 'SetUserName', userName);
                 }
-            });
-        }
 
-        window.onload = function() {
-            getUsernameFromFirebase();
-        };
+                // Сохранение ника в Firebase
+                if (firebaseInitialized) {
+                    const userId = user.id;
+                    firebase.database().ref('users/' + userId).set({
+                        username: userName
+                    }).then(() => {
+                        console.log("Имя пользователя успешно сохранено в Firebase.");
+                    }).catch((error) => {
+                        console.error("Ошибка при сохранении имени пользователя в Firebase:", error);
+                    });
+                }
+            }
+        });
     </script>
 </head>
 <body>
-    <!-- Здесь будет ваша сборка WebGL от Unity -->
+    <h1>Firebase Check</h1>
     <script src="Build/ClickerTG.js"></script>
-    
     <div id="unity-container" class="unity-desktop">
         <canvas id="unity-canvas" width="960" height="600"></canvas>
         <div id="unity-loading-bar">
@@ -102,7 +87,6 @@
             <div id="unity-build-title">ClickerTelegram</div>
         </div>
     </div>
-
     <script>
         var container = document.querySelector("#unity-container");
         var canvas = document.querySelector("#unity-canvas");
