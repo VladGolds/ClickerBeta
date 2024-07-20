@@ -11,6 +11,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
+    <script src="mobileKeyboard.js"></script>
+
     <script>
         // Вставьте сюда свои данные конфигурации Firebase
         const firebaseConfig = {
@@ -59,14 +61,6 @@
         // Функция для вызова из Unity
         function saveNameFromUnity(name) {
             saveNameToFirebase(name);
-        }
-
-        // Функция для установки фокуса на поле ввода
-        function focusInputField() {
-            var inputField = document.getElementById('unityInputField'); // Убедись, что у тебя правильный ID
-            if (inputField) {
-                inputField.focus();
-            }
         }
     </script>
 </head>
