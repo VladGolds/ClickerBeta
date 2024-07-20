@@ -48,50 +48,45 @@
             }
         }
 
-        // Функция для проверки имени в базе данных
-        function checkNameInDatabase(playerName) {
-            if (!firebaseInitialized) {
-                Unity.call("OnNameChecked", null);
-                return;
-            }
-            firebase.database().ref('users/' + playerName).once('value').then((snapshot) => {
-                const name = snapshot.exists() ? snapshot.val() : null;
-                Unity.call("OnNameChecked", JSON.stringify(name));
-            }).catch((error) => {
-                console.error("Ошибка проверки имени в базе данных:", error);
-                Unity.call("OnNameChecked", null);
-            });
-        }
-
-        // Функция для сохранения имени в базе данных
-        function saveNameToDatabase(playerName) {
-            if (!firebaseInitialized) {
-                console.error("Firebase не подключен.");
-                return;
-            }
-            firebase.database().ref('users/' + playerName).set(playerName).then(() => {
-                console.log("Имя успешно сохранено в базе данных Firebase");
-            }).catch((error) => {
-                console.error("Ошибка при сохранении имени в базе данных:", error);
-            });
-        }
-
         // Инициализация Firebase
         initializeFirebase();
     </script>
 </head>
 <body>
     <script>
-        // Функция для вызова из Unity
-        function getFirebaseConnectionStatus() {
+        // Функция для проверки имени в базе данных
+        function checkNameInDatabase(playerName) {
             if (firebaseInitialized) {
-                Unity.call("OnFirebaseConnectionStatusReceived", "Firebase подключен.");
+                const ref = firebase.database().ref('players/' + playerName);
+                ref.once('value').then(function(snapshot) {
+                    if (snapshot.exists()) {
+                        Unity.call("OnNameChecked", snapshot.val().name);
+                    } else {
+                        Unity.call("OnNameChecked", "");
+                    }
+                }).catch(function(error) {
+                    console.error("Ошибка проверки имени в базе данных:", error);
+                });
+            } else {
+                Unity.call("OnFirebaseConnectionStatusReceived", "Firebase не подключен.");
+            }
+        }
+
+        // Функция для сохранения имени в базе данных
+        function saveNameToDatabase(playerName) {
+            if (firebaseInitialized) {
+                const ref = firebase.database().ref('players/' + playerName);
+                ref.set({ name: playerName }).then(function() {
+                    console.log("Имя сохранено в базе данных:", playerName);
+                }).catch(function(error) {
+                    console.error("Ошибка сохранения имени в базе данных:", error);
+                });
             } else {
                 Unity.call("OnFirebaseConnectionStatusReceived", "Firebase не подключен.");
             }
         }
     </script>
-    
+
     <!-- Здесь будет ваша сборка WebGL от Unity -->
     <script src="Build/ClickerTG.js"></script>
     
