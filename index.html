@@ -10,7 +10,8 @@
     <!-- Подключение Firebase SDK 8.x -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
     <script src="mobileKeyboard.js"></script>
 
     <script>
@@ -33,9 +34,11 @@
                 firebase.initializeApp(firebaseConfig);
                 firebaseInitialized = true;
                 console.log("Firebase успешно подключен.");
+                getFirebaseConnectionStatus(); // Проверка статуса подключения
             } catch (error) {
                 firebaseInitialized = false;
                 console.error("Ошибка подключения Firebase:", error);
+                getFirebaseConnectionStatus(); // Проверка статуса подключения
             }
         }
 
@@ -47,12 +50,6 @@
             }
         }
 
-        // Инициализация Firebase
-        initializeFirebase();
-    </script>
-</head>
-<body>
-    <script>
         // Функция для проверки имени в базе данных
         function checkNameInDatabase(playerName) {
             if (firebaseInitialized) {
@@ -85,8 +82,14 @@
                 Unity.call("OnFirebaseConnectionStatusReceived", "Firebase не подключен.");
             }
         }
-    </script>
 
+        // Инициализация Firebase при загрузке страницы
+        window.onload = function() {
+            initializeFirebase();
+        };
+    </script>
+</head>
+<body>
     <!-- Здесь будет ваша сборка WebGL от Unity -->
     <script src="Build/ClickerTG.js"></script>
     
@@ -124,24 +127,57 @@
             if (type == 'error') div.style = 'background: red; padding: 10px;';
             else {
                 if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-                else div.style = 'background: green; padding: 10px;';
+                setTimeout(function() {
+                    warningBanner.removeChild(div);
+                    updateBannerVisibility();
+                }, 5000);
             }
             updateBannerVisibility();
         }
 
-        var unityInstance = UnityLoader.instantiate("unity-canvas", "Build/ClickerTG.json", { 
-            onProgress: function(unityInstance, progress) {
+        var buildUrl = "Build";
+        var loaderUrl = buildUrl + "/ClickerTG.loader.js";
+        var config = {
+            dataUrl: buildUrl + "/ClickerTG.data",
+            frameworkUrl: buildUrl + "/ClickerTG.framework.js",
+            codeUrl: buildUrl + "/ClickerTG.wasm",
+            streamingAssetsUrl: "StreamingAssets",
+            companyName: "Gold Studio",
+            productName: "ClickerTelegram",
+            productVersion: "1.0",
+            showBanner: unityShowBanner,
+        };
+
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+            var meta = document.createElement('meta');
+            meta.name = 'viewport';
+            meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+            document.getElementsByTagName('head')[0].appendChild(meta);
+            container.className = "unity-mobile";
+            canvas.className = "unity-mobile";
+        } else {
+            canvas.style.width = "960px";
+            canvas.style.height = "600px";
+        }
+
+        loadingBar.style.display = "block";
+
+        var script = document.createElement("script");
+        script.src = loaderUrl;
+        script.onload = () => {
+            createUnityInstance(canvas, config, (progress) => {
                 progressBarFull.style.width = 100 * progress + "%";
-            }
-        });
-
-        window.addEventListener("resize", function () {
-            if (unityInstance) unityInstance.SendMessage('Resize', 'Resize');
-        });
-
-        fullscreenButton.addEventListener("click", function () {
-            if (unityInstance) unityInstance.SetFullscreen(1);
-        });
+            }).then((unityInstance) => {
+                loadingBar.style.display = "none";
+                this.unityInstance = unityInstance;
+                fullscreenButton.onclick = () => {
+                    unityInstance.SetFullscreen(1);
+                };
+            }).catch((message) => {
+                alert(message);
+            });
+        };
+        document.body.appendChild(script);
     </script>
 </body>
 </html>
