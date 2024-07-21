@@ -103,6 +103,19 @@
                 Unity.call("OnCoinsLoaded", "0");
             });
         }
+        
+        function saveLeagueToDatabase(playerName, currentLeague) {
+            if (!firebaseInitialized) {
+                console.error("Firebase не подключен.");
+                return;
+            }
+            firebase.database().ref('users/' + playerName + '/league').set(currentLeague)
+            .then(() => {
+                console.log('Лига успешно сохранена в базе данных Firebase');
+            }).catch((error) => {
+                console.error('Ошибка при сохранении лиги:', error);
+            });
+        }
 
         // Инициализация Firebase
         initializeFirebase();
