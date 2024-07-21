@@ -187,6 +187,33 @@
             });
         }
 
+        function getTopPlayers() {
+            if (!firebaseInitialized) {
+                Unity.call("OnTopPlayersReceived", JSON.stringify([]));
+                return;
+            }
+
+            firebase.database().ref('users').orderByChild('coins').limitToLast(10).once('value')
+            .then((snapshot) => {
+                const players = [];
+                snapshot.forEach((childSnapshot) => {
+                    const playerData = childSnapshot.val();
+                    players.push({
+                        playerName: childSnapshot.key,
+                        coins: playerData.coins || 0
+                    });
+                });
+
+                // Сортировка игроков по количеству монет в порядке убывания
+                players.sort((a, b) => b.coins - a.coins);
+
+                Unity.call("OnTopPlayersReceived", JSON.stringify(players));
+            }).catch((error) => {
+                console.error("Ошибка при получении топ игроков:", error);
+                Unity.call("OnTopPlayersReceived", JSON.stringify([]));
+            });
+        }
+
         // Инициализация Firebase
         initializeFirebase();
     </script>
