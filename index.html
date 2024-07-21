@@ -117,6 +117,76 @@
             });
         }
 
+        // Функция для блокировки аккаунта
+        function blockAccount(playerName) {
+            if (!firebaseInitialized) {
+                console.error("Firebase не подключен.");
+                return;
+            }
+            firebase.database().ref('users/' + playerName).update({ banned: true })
+            .then(() => {
+                console.log('Аккаунт заблокирован');
+                loadAccountList(); // Обновляем список аккаунтов
+            }).catch((error) => {
+                console.error('Ошибка при блокировке аккаунта:', error);
+            });
+        }
+
+        // Функция для разблокировки аккаунта
+        function unblockAccount(playerName) {
+            if (!firebaseInitialized) {
+                console.error("Firebase не подключен.");
+                return;
+            }
+            firebase.database().ref('users/' + playerName).update({ banned: false })
+            .then(() => {
+                console.log('Аккаунт разблокирован');
+                loadAccountList(); // Обновляем список аккаунтов
+            }).catch((error) => {
+                console.error('Ошибка при разблокировке аккаунта:', error);
+            });
+        }
+
+        // Функция для загрузки списка аккаунтов
+        function loadAccountList() {
+            if (!firebaseInitialized) {
+                console.error("Firebase не подключен.");
+                return;
+            }
+            firebase.database().ref('users').once('value').then((snapshot) => {
+                const accounts = snapshot.val();
+                const accountListElement = document.getElementById('account-list');
+                accountListElement.innerHTML = ''; // Очистка предыдущего списка
+                if (accounts) {
+                    Object.keys(accounts).forEach(playerName => {
+                        const isBanned = accounts[playerName].banned || false;
+                        const listItem = document.createElement('div');
+                        listItem.innerHTML = `${playerName} - ${isBanned ? 'Заблокирован' : 'Активен'}
+                            <button onclick="blockAccount('${playerName}')" ${isBanned ? 'disabled' : ''}>Заблокировать</button>
+                            <button onclick="unblockAccount('${playerName}')" ${!isBanned ? 'disabled' : ''}>Разблокировать</button>`;
+                        accountListElement.appendChild(listItem);
+                    });
+                }
+            }).catch((error) => {
+                console.error("Ошибка загрузки списка аккаунтов:", error);
+            });
+        }
+
+        // Функция для проверки блокировки аккаунта
+        function checkAccountStatus(playerName) {
+            if (!firebaseInitialized) {
+                Unity.call("OnAccountStatusChecked", "Error: Firebase not initialized.");
+                return;
+            }
+            firebase.database().ref('users/' + playerName + '/blocked').once('value').then((snapshot) => {
+                const isBlocked = snapshot.exists() ? snapshot.val() : false;
+                Unity.call("OnAccountStatusChecked", isBlocked ? "Blocked" : "Active");
+            }).catch((error) => {
+                console.error("Error checking account status:", error);
+                Unity.call("OnAccountStatusChecked", "Error");
+            });
+        }
+
         // Инициализация Firebase
         initializeFirebase();
     </script>
@@ -133,6 +203,12 @@
         }
     </script>
     
+    <!-- Интерфейс управления аккаунтами -->
+    <div id="account-management">
+        <button id="toggle-account-management">Показать управление аккаунтами</button>
+        <div id="account-list" style="display: none;"></div>
+    </div>
+
     <!-- Здесь будет ваша сборка WebGL от Unity -->
     <script src="Build/ClickerTG.js"></script>
     
@@ -177,6 +253,19 @@
             }
             updateBannerVisibility();
         }
+
+        // Функция для переключения видимости списка аккаунтов
+        document.getElementById('toggle-account-management').addEventListener('click', function() {
+            const accountListElement = document.getElementById('account-list');
+            if (accountListElement.style.display === 'none') {
+                accountListElement.style.display = 'block';
+                this.textContent = 'Скрыть управление аккаунтами';
+                loadAccountList(); // Загружаем список аккаунтов при показе
+            } else {
+                accountListElement.style.display = 'none';
+                this.textContent = 'Показать управление аккаунтами';
+            }
+        });
 
         var buildUrl = "Build";
         var loaderUrl = buildUrl + "/ClickerTG.loader.js";
