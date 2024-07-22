@@ -173,20 +173,54 @@
             });
         }
 
-        // Функция для проверки блокировки аккаунта
-        function checkAccountStatus(playerName) {
+                function checkAccountStatus(playerName) {
             if (!firebaseInitialized) {
-                Unity.call("OnAccountStatusChecked", "Error: Firebase not initialized.");
+                if (typeof Unity !== "undefined" && Unity.call) {
+                    Unity.call("OnAccountStatusChecked", "Error: Firebase not initialized.");
+                } else {
+                    console.error("Unity объект не доступен.");
+                }
                 return;
             }
+
             firebase.database().ref('users/' + playerName + '/blocked').once('value').then((snapshot) => {
                 const isBlocked = snapshot.exists() ? snapshot.val() : false;
-                Unity.call("OnAccountStatusChecked", isBlocked ? "Blocked" : "Active");
+                if (typeof Unity !== "undefined" && Unity.call) {
+                    Unity.call("OnAccountStatusChecked", isBlocked ? "Blocked" : "Active");
+                } else {
+                    console.error("Unity объект не доступен.");
+                }
             }).catch((error) => {
                 console.error("Error checking account status:", error);
-                Unity.call("OnAccountStatusChecked", "Error");
+                if (typeof Unity !== "undefined" && Unity.call) {
+                    Unity.call("OnAccountStatusChecked", "Error");
+                } else {
+                    console.error("Unity объект не доступен.");
+                }
             });
         }
+
+        function getPlayerName() {
+            if (typeof Unity !== "undefined" && Unity.call) {
+                Unity.call("GetPlayerName");
+            } else {
+                console.error("Unity объект не доступен.");
+            }
+        }
+
+        function onPlayerNameReceived(playerName) {
+            if (!playerName) {
+                console.error("Имя игрока не получено.");
+                return;
+            }
+
+            // Задержка перед проверкой статуса аккаунта
+            setTimeout(() => {
+                checkAccountStatus(playerName);
+            }, 10000); // 10 секунд
+        }
+
+        window.onPlayerNameReceived = onPlayerNameReceived;
 
         // Инициализация Firebase
         initializeFirebase();
@@ -306,6 +340,13 @@
                 fullscreenButton.onclick = () => {
                     unityInstance.SetFullscreen(1);
                 };
+
+                // Создаем глобальный объект Unity
+                window.Unity = unityInstance;
+
+                // Запрашиваем имя игрока после инициализации
+                getPlayerName();
+
             }).catch((message) => {
                 alert(message);
             });
