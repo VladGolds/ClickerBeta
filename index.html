@@ -176,15 +176,15 @@
         // Функция для проверки блокировки аккаунта
         function checkAccountStatus(playerName) {
             if (!firebaseInitialized) {
-                SendMessage("LeaderboardManager", "OnAccountStatusChecked", "Error: Firebase not initialized.");
+                SendMessage("GameManager", "OnAccountStatusChecked", "Error: Firebase not initialized.");
                 return;
             }
             firebase.database().ref('users/' + playerName + '/banned').once('value').then((snapshot) => {
                 const isBanned = snapshot.exists() ? snapshot.val() : false;
-                SendMessage("LeaderboardManager", "OnAccountStatusChecked", isBanned ? "Banned" : "Active");
+                SendMessage("GameManager", "OnAccountStatusChecked", isBanned ? "Banned" : "Active");
             }).catch((error) => {
                 console.error("Ошибка проверки статуса аккаунта:", error);
-                SendMessage("LeaderboardManager", "OnAccountStatusChecked", "Error");
+                SendMessage("GameManager", "OnAccountStatusChecked", "Error");
             });
 
         }
@@ -207,7 +207,7 @@
                     console.log(`Топ игроки: ${json}`);
                     // Отправка данных в Unity
                     if (typeof SendMessage === "function") {
-                        SendMessage("LeaderboardManager", "OnTopPlayersReceived", json);
+                        SendMessage("GameManager", "OnTopPlayersReceived", json);
                     } else {
                         console.error("SendMessage функция не определена.");
                     }
@@ -226,9 +226,9 @@
         // Функция для вызова из Unity
         function getFirebaseConnectionStatus() {
             if (firebaseInitialized) {
-                Unity.call("LeaderboardManager", "OnFirebaseConnectionStatusReceived", "Firebase подключен.");
+                Unity.call("GameManager", "OnFirebaseConnectionStatusReceived", "Firebase подключен.");
             } else {
-                Unity.call("LeaderboardManager", "OnFirebaseConnectionStatusReceived", "Firebase не подключен.");
+                Unity.call("GameManager", "OnFirebaseConnectionStatusReceived", "Firebase не подключен.");
             }
         }
 
