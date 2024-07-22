@@ -173,54 +173,48 @@
             });
         }
 
-                function checkAccountStatus(playerName) {
+        // Функция для проверки блокировки аккаунта
+        function checkAccountStatus(playerName) {
             if (!firebaseInitialized) {
-                if (typeof Unity !== "undefined" && Unity.call) {
-                    Unity.call("OnAccountStatusChecked", "Error: Firebase not initialized.");
-                } else {
-                    console.error("Unity объект не доступен.");
-                }
+                Unity.call("OnAccountStatusChecked", "Error: Firebase not initialized.");
                 return;
             }
-
             firebase.database().ref('users/' + playerName + '/blocked').once('value').then((snapshot) => {
                 const isBlocked = snapshot.exists() ? snapshot.val() : false;
-                if (typeof Unity !== "undefined" && Unity.call) {
-                    Unity.call("OnAccountStatusChecked", isBlocked ? "Blocked" : "Active");
-                } else {
-                    console.error("Unity объект не доступен.");
-                }
+                Unity.call("OnAccountStatusChecked", isBlocked ? "Blocked" : "Active");
             }).catch((error) => {
                 console.error("Error checking account status:", error);
-                if (typeof Unity !== "undefined" && Unity.call) {
-                    Unity.call("OnAccountStatusChecked", "Error");
-                } else {
-                    console.error("Unity объект не доступен.");
-                }
+                Unity.call("OnAccountStatusChecked", "Error");
             });
         }
 
-        function getPlayerName() {
-            if (typeof Unity !== "undefined" && Unity.call) {
-                Unity.call("GetPlayerName");
-            } else {
-                console.error("Unity объект не доступен.");
-            }
-        }
-
-        function onPlayerNameReceived(playerName) {
-            if (!playerName) {
-                console.error("Имя игрока не получено.");
+        // Функция для получения топ игроков
+        function getTopPlayers() {
+            if (!firebaseInitialized) {
+                console.error("Firebase не подключен.");
                 return;
             }
 
-            // Задержка перед проверкой статуса аккаунта
-            setTimeout(() => {
-                checkAccountStatus(playerName);
-            }, 10000); // 10 секунд
+            firebase.database().ref('users').orderByChild('coins').limitToLast(10).once('value')
+                .then(snapshot => {
+                    let players = [];
+                    snapshot.forEach(childSnapshot => {
+                        let playerData = childSnapshot.val();
+                        players.unshift({ playerName: childSnapshot.key, coins: playerData.coins || 0 });
+                    });
+                    const json = JSON.stringify({ players: players });
+                    console.log(`Топ игроки: ${json}`);
+                    // Отправка данных в Unity
+                    if (typeof SendMessage === "function") {
+                        SendMessage("LeaderboardManager", "OnTopPlayersReceived", json);
+                    } else {
+                        console.error("SendMessage функция не определена.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Ошибка при получении топ игроков:", error);
+                });
         }
-
-        window.onPlayerNameReceived = onPlayerNameReceived;
 
         // Инициализация Firebase
         initializeFirebase();
@@ -231,9 +225,17 @@
         // Функция для вызова из Unity
         function getFirebaseConnectionStatus() {
             if (firebaseInitialized) {
-                Unity.call("OnFirebaseConnectionStatusReceived", "Firebase подключен.");
+                Unity.call("LeaderboardManager", "OnFirebaseConnectionStatusReceived", "Firebase подключен.");
             } else {
-                Unity.call("OnFirebaseConnectionStatusReceived", "Firebase не подключен.");
+                Unity.call("LeaderboardManager", "OnFirebaseConnectionStatusReceived", "Firebase не подключен.");
+            }
+        }
+
+        function SendMessage(gameObject, method, message) {
+            if (window.unityInstance) {
+                window.unityInstance.SendMessage(gameObject, method, message);
+            } else {
+                console.error('Unity instance is not initialized');
             }
         }
     </script>
@@ -336,17 +338,11 @@
                 progressBarFull.style.width = 100 * progress + "%";
             }).then((unityInstance) => {
                 loadingBar.style.display = "none";
-                this.unityInstance = unityInstance;
+                //this.unityInstance = unityInstance;
+                window.unityInstance = unityInstance;
                 fullscreenButton.onclick = () => {
                     unityInstance.SetFullscreen(1);
                 };
-
-                // Создаем глобальный объект Unity
-                window.Unity = unityInstance;
-
-                // Запрашиваем имя игрока после инициализации
-                getPlayerName();
-
             }).catch((message) => {
                 alert(message);
             });
