@@ -217,9 +217,59 @@
                 });
         }
 
-        // Инициализация Firebase
-        initializeFirebase();
+        function checkIfAdmin(playerName, callback) {
+            if (!firebaseInitialized) {
+                console.error("Firebase не подключен.");
+                callback(false);
+                return;
+            }
+            firebase.database().ref('users/' + playerName + '/isAdmin').once('value').then((snapshot) => {
+                const isAdmin = snapshot.exists() ? snapshot.val() : false;
+                callback(isAdmin);
+            }).catch((error) => {
+                console.error("Ошибка проверки административных прав:", error);
+                callback(false);
+            });
+        }
+
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Предположим, что имя игрока хранится в переменной playerName
+            const playerName = 'Gogol'; // Замените на фактическое имя игрока
+            
+            checkIfAdmin(playerName, (isAdmin) => {
+                if (isAdmin) {
+                    document.getElementById('account-management').style.display = 'block';
+                } else {
+                    document.getElementById('account-management').style.display = 'none';
+                }
+            });
+        });
+
+        document.addEventListener("DOMContentLoaded", () => {
+            initializeFirebase();
+
+            const toggleAccountManagementButton = document.getElementById('toggle-account-management');
+            const accountListElement = document.getElementById('account-list');
+
+            toggleAccountManagementButton.addEventListener('click', () => {
+                if (accountListElement.style.display === 'none') {
+                    loadAccountList();
+                    accountListElement.style.display = 'block';
+                    toggleAccountManagementButton.innerText = 'Скрыть управление аккаунтами';
+                } else {
+                    accountListElement.style.display = 'none';
+                    toggleAccountManagementButton.innerText = 'Показать управление аккаунтами';
+                }
+            });
+        });
+
     </script>
+    <style>
+        #account-management {
+            display: none; /* Скрыть блок управления аккаунтами по умолчанию */
+        }
+    </style>
 </head>
 <body>
     <script>
