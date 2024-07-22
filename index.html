@@ -176,16 +176,17 @@
         // Функция для проверки блокировки аккаунта
         function checkAccountStatus(playerName) {
             if (!firebaseInitialized) {
-                Unity.call("OnAccountStatusChecked", "Error: Firebase not initialized.");
+                SendMessage("LeaderboardManager", "OnAccountStatusChecked", "Error: Firebase not initialized.");
                 return;
             }
             firebase.database().ref('users/' + playerName + '/banned').once('value').then((snapshot) => {
                 const isBanned = snapshot.exists() ? snapshot.val() : false;
-                Unity.call("OnAccountStatusChecked", isBanned ? "Banned" : "Active");
+                SendMessage("LeaderboardManager", "OnAccountStatusChecked", isBanned ? "Banned" : "Active");
             }).catch((error) => {
-                console.error("Error checking account status:", error);
-                Unity.call("OnAccountStatusChecked", "Error");
+                console.error("Ошибка проверки статуса аккаунта:", error);
+                SendMessage("LeaderboardManager", "OnAccountStatusChecked", "Error");
             });
+
         }
 
         // Функция для получения топ игроков
