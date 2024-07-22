@@ -179,9 +179,9 @@
                 Unity.call("OnAccountStatusChecked", "Error: Firebase not initialized.");
                 return;
             }
-            firebase.database().ref('users/' + playerName + '/blocked').once('value').then((snapshot) => {
+            firebase.database().ref('users/' + playerName + '/banned').once('value').then((snapshot) => {
                 const isBanned = snapshot.exists() ? snapshot.val() : false;
-                Unity.call("OnAccountStatusChecked", isBanned ? "Blocked" : "Active");
+                Unity.call("OnAccountStatusChecked", isBanned ? "Banned" : "Active");
             }).catch((error) => {
                 console.error("Error checking account status:", error);
                 Unity.call("OnAccountStatusChecked", "Error");
