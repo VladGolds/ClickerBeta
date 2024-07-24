@@ -96,20 +96,6 @@
             });
         }
 
-        // Функция для сохранения возраста учетной записи в базе данных
-        function saveAccountAge(playerName, accountAge) {
-            if (!firebaseInitialized) {
-                console.error("Firebase не подключен.");
-                return;
-            }
-            firebase.database().ref('users/' + playerName + '/accountAge').set(accountAge)
-                .then(() => {
-                    console.log('Возраст учетной записи успешно сохранен в базе данных Firebase');
-                }).catch((error) => {
-                    console.error('Ошибка при сохранении возраста учетной записи:', error);
-                });
-        }
-
         //Загрузка дней аккаунта
         function loadAccountAge(playerName) {
             if (!firebaseInitialized) {
