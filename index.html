@@ -110,17 +110,48 @@
                 });
         }
 
-        // Функция для загрузки возраста учетной записи из базы данных
+        //Загрузка дней аккаунта
         function loadAccountAge(playerName) {
             if (!firebaseInitialized) {
                 Unity.call("OnAccountAgeLoaded", "0");
                 return;
             }
+
             firebase.database().ref('users/' + playerName + '/accountAge').once('value').then((snapshot) => {
-                const accountAge = snapshot.exists() ? snapshot.val() : "0";
-                Unity.call("OnAccountAgeLoaded", accountAge);
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    let accountAge = data.accountAge || 0;
+                    let lastLoginDate = data.lastLoginDate || new Date().toISOString().split('T')[0];
+                    const currentDate = new Date().toISOString().split('T')[0];
+
+                    if (currentDate !== lastLoginDate) {
+                        accountAge++;
+                        firebase.database().ref('users/' + playerName).update({
+                            accountAge: accountAge,
+                            lastLoginDate: currentDate
+                        }).then(() => {
+                            console.log('Возраст учетной записи и дата последнего входа успешно обновлены в базе данных Firebase');
+                            Unity.call("OnAccountAgeLoaded", accountAge.toString());
+                        }).catch((error) => {
+                            console.error("Ошибка при обновлении возраста учетной записи и даты последнего входа:", error);
+                            Unity.call("OnAccountAgeLoaded", accountAge.toString());
+                        });
+                    } else {
+                        Unity.call("OnAccountAgeLoaded", accountAge.toString());
+                    }
+                } else {
+                    firebase.database().ref('users/' + playerName).set({
+                        accountAge: 1,
+                        lastLoginDate: new Date().toISOString().split('T')[0]
+                    }).then(() => {
+                        Unity.call("OnAccountAgeLoaded", "1");
+                    }).catch((error) => {
+                        console.error("Ошибка при создании новой учетной записи:", error);
+                        Unity.call("OnAccountAgeLoaded", "0");
+                    });
+                }
             }).catch((error) => {
-                console.error("Ошибка загрузки возраста учетной записи из базы данных:", error);
+                console.error("Ошибка загрузки данных учетной записи из базы данных:", error);
                 Unity.call("OnAccountAgeLoaded", "0");
             });
         }
